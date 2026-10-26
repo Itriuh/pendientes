@@ -1,0 +1,677 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mis Pendientes</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#3b6ef5">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Pendientes">
+<style>
+  :root {
+    --bg: #f5f6f8; --card: #ffffff; --text: #1d2330; --muted: #6b7280; --line: #e5e7eb;
+    --accent: #3b6ef5; --accent-soft: #e6edff; --ok: #16a34a; --ok-soft: #dcfce7;
+    --warn: #d97706; --warn-soft: #fef3c7; --bad: #dc2626;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #11141a; --card: #1a1f28; --text: #e8eaef; --muted: #9aa3b2; --line: #2a3140;
+      --accent: #6d93ff; --accent-soft: #23304f; --ok: #34d36c; --ok-soft: #173826;
+      --warn: #f2b33d; --warn-soft: #3a2f14; --bad: #f87171;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+    font: 15px/1.45 "Segoe UI", system-ui, sans-serif; }
+  header { max-width: 900px; margin: 0 auto; padding: 20px 16px 8px; display: flex;
+    align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  h1 { font-size: 22px; margin: 0; }
+  .sub { color: var(--muted); font-size: 13px; }
+  main { max-width: 900px; margin: 0 auto; padding: 0 16px 40px; }
+  nav { display: flex; gap: 6px; margin: 8px 0 16px; }
+  nav button { flex: 1; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+    padding: 16px; margin-bottom: 14px; }
+  .card h2 { font-size: 16px; margin: 0 0 12px; }
+  button { font: inherit; border: 1px solid var(--line); background: var(--card); color: var(--text);
+    border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+  button:hover { border-color: var(--accent); }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  button.tab.active { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); font-weight: 600; }
+  button.icon { padding: 4px 8px; color: var(--muted); }
+  input[type=text], input[type=time], input[type=number] { font: inherit; padding: 8px 10px;
+    border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--text); }
+  input[type=text] { flex: 1; min-width: 0; }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .hidden { display: none !important; }
+  .banner { background: var(--warn-soft); color: var(--text); border: 1px solid var(--warn);
+    border-radius: 10px; padding: 10px 14px; margin-bottom: 14px; display: flex; gap: 10px;
+    align-items: center; justify-content: space-between; flex-wrap: wrap; }
+
+  ul.tasks { list-style: none; margin: 0; padding: 0; }
+  ul.tasks li { display: flex; align-items: center; gap: 10px; padding: 10px 4px;
+    border-bottom: 1px solid var(--line); }
+  ul.tasks li:last-child { border-bottom: 0; }
+  ul.tasks .txt { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+  ul.tasks li.done .txt { text-decoration: line-through; color: var(--muted); }
+  .chip { font-size: 12px; padding: 2px 8px; border-radius: 99px; background: var(--accent-soft);
+    color: var(--accent); white-space: nowrap; }
+  .chip.late { background: var(--warn-soft); color: var(--warn); }
+  .chip.ok { background: var(--ok-soft); color: var(--ok); }
+  input[type=checkbox] { width: 20px; height: 20px; accent-color: var(--ok); cursor: pointer; }
+  .empty { color: var(--muted); text-align: center; padding: 14px; }
+
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 14px; }
+  .stat { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
+  .stat .n { font-size: 24px; font-weight: 700; }
+  .stat .l { color: var(--muted); font-size: 12px; }
+
+  .tablewrap { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; min-width: 520px; }
+  th, td { padding: 8px 6px; text-align: center; border-bottom: 1px solid var(--line); }
+  th:first-child, td:first-child { text-align: left; }
+  th { font-size: 12px; color: var(--muted); font-weight: 600; }
+  th.today, td.today { background: var(--accent-soft); }
+  tr.bonus td { background: var(--warn-soft); }
+  tr.bonus td.today { background: var(--warn-soft); box-shadow: inset 0 0 0 2px var(--warn); }
+  tr.total td { font-weight: 700; border-bottom: 0; }
+  .hname { display: flex; align-items: center; gap: 4px; }
+  .bonusbox { display: flex; gap: 12px; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; background: var(--warn-soft); border: 1px solid var(--warn); border-radius: 10px; padding: 12px 14px; }
+  .bonusbox b { font-size: 15px; }
+
+  svg { width: 100%; height: auto; display: block; }
+  svg text { fill: var(--muted); font-size: 11px; font-family: inherit; }
+  .legend { display: flex; gap: 14px; font-size: 12px; color: var(--muted); margin-top: 6px; flex-wrap: wrap; }
+  .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+  .donutwrap { display: flex; gap: 20px; align-items: center; flex-wrap: wrap; }
+  .donutwrap svg { width: 140px; flex: none; }
+  .bar { height: 10px; background: var(--line); border-radius: 99px; overflow: hidden; }
+  .bar > div { height: 100%; background: var(--ok); }
+  footer { color: var(--muted); font-size: 12px; }
+
+  .chip.cat-trabajo { background: #e0ecff; color: #2f5fd0; }
+  .chip.cat-escuela { background: #f1e6ff; color: #7c3aed; }
+  .chip.cat-vida { background: #dcfce7; color: #15803d; }
+  @media (prefers-color-scheme: dark) {
+    .chip.cat-trabajo { background: #1f2f52; color: #8fb0ff; }
+    .chip.cat-escuela { background: #31234d; color: #c4a5ff; }
+    .chip.cat-vida { background: #173826; color: #5fe08d; }
+  }
+  select { font: inherit; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px;
+    background: var(--bg); color: var(--text); }
+  .filters { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+  .filters button { border-radius: 99px; padding: 5px 12px; font-size: 13px; }
+  .filters button.active { background: var(--text); color: var(--bg); border-color: var(--text); }
+  .deed { display: flex; gap: 14px; align-items: center; justify-content: space-between; flex-wrap: wrap;
+    background: linear-gradient(135deg, #fff1f2, #fef9c3); border: 1px solid #fda4af; }
+  @media (prefers-color-scheme: dark) { .deed { background: linear-gradient(135deg, #3a1d24, #3a3416); border-color: #9f4a5a; } }
+  .deed .emoji { font-size: 34px; line-height: 1; }
+  .deed .what { font-size: 17px; font-weight: 600; margin: 2px 0; }
+  .deed.done .what { text-decoration: line-through; color: var(--muted); }
+  @media (max-width: 560px) {
+    #formTask input[type=text] { flex-basis: 100%; }
+    #formTask select, #formTask input[type=time] { flex: 1; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>Mis Pendientes</h1>
+    <div class="sub" id="hoy"></div>
+  </div>
+  <div class="row">
+    <span class="chip ok" id="puntosHoyChip">0 pts hoy</span>
+  </div>
+</header>
+
+<main>
+  <div class="banner hidden" id="notifBanner">
+    <span>Activa las notificaciones para que te recuerde tus pendientes.</span>
+    <button class="primary" id="btnNotif">Activar notificaciones</button>
+  </div>
+
+  <nav>
+    <button class="tab active" data-tab="pendientes">Pendientes</button>
+    <button class="tab" data-tab="habitos">Hábitos diarios</button>
+    <button class="tab" data-tab="avance">Avance</button>
+  </nav>
+
+  <!-- PENDIENTES -->
+  <section id="tab-pendientes">
+    <div class="card deed" id="deedCard"></div>
+    <div class="card">
+      <h2>Nuevo pendiente</h2>
+      <form id="formTask" class="row">
+        <input type="text" id="taskText" placeholder="¿Qué tienes que hacer?" required>
+        <select id="taskCat" title="Categoría">
+          <option value="trabajo">💼 Trabajo</option>
+          <option value="escuela">📚 Escuela</option>
+          <option value="vida" selected>🏠 Vida</option>
+        </select>
+        <input type="time" id="taskTime" value="09:00" title="Hora del recordatorio diario">
+        <button class="primary" type="submit">Agregar</button>
+      </form>
+      <p class="sub" style="margin:8px 0 0">Te llegará una notificación a esa hora todos los días hasta que lo taches.</p>
+    </div>
+    <div class="filters" id="filters"></div>
+    <div class="card">
+      <h2>Por hacer <span class="sub" id="countPend"></span></h2>
+      <ul class="tasks" id="listPend"></ul>
+    </div>
+    <div class="card">
+      <div class="row" style="justify-content:space-between">
+        <h2 style="margin:0">Tachados <span class="sub" id="countDone"></span></h2>
+        <button class="icon" id="btnClearDone">Borrar tachados</button>
+      </div>
+      <ul class="tasks" id="listDone" style="margin-top:8px"></ul>
+    </div>
+  </section>
+
+  <!-- HÁBITOS -->
+  <section id="tab-habitos" class="hidden">
+    <div class="card">
+      <div class="bonusbox">
+        <div>
+          <b>¿Hoy no hiciste ningún gasto innecesario?</b>
+          <div class="sub">Comida en la calle, carros de juguete, antojos… Márcalo al final del día: <b id="bonusPtsLbl">+25</b> pts extra.</div>
+        </div>
+        <label class="row"><input type="checkbox" id="bonusToday"> Sí, cero gastos innecesarios</label>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Esta semana</h2>
+      <div class="tablewrap"><table id="habitTable"></table></div>
+      <form id="formHabit" class="row" style="margin-top:12px">
+        <input type="text" id="habitText" placeholder="Nueva actividad diaria (ej. leer 10 min)" required>
+        <button type="submit">Agregar actividad</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- AVANCE -->
+  <section id="tab-avance" class="hidden">
+    <div class="stats" id="stats"></div>
+    <div class="card">
+      <h2>Avance de pendientes</h2>
+      <div class="donutwrap">
+        <svg viewBox="0 0 120 120" id="donut"></svg>
+        <div style="flex:1;min-width:180px" id="donutInfo"></div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Pendientes tachados por día (últimos 14 días)</h2>
+      <svg id="chartTasks" viewBox="0 0 640 200"></svg>
+    </div>
+    <div class="card">
+      <h2>Puntos por día (últimos 14 días)</h2>
+      <svg id="chartPoints" viewBox="0 0 640 200"></svg>
+      <div class="legend"><span><i style="background:var(--ok)"></i>Hábitos</span><span><i style="background:var(--warn)"></i>Bono sin gastos</span><span><i style="background:#ec4899"></i>Buena obra</span></div>
+    </div>
+    <div class="card">
+      <h2>Ajustes</h2>
+      <div class="row" style="margin-bottom:10px">
+        <label>Puntos por hábito <input type="number" id="setHabitPts" min="1" style="width:80px"></label>
+        <label>Puntos del bono <input type="number" id="setBonusPts" min="1" style="width:80px"></label>
+        <label>Puntos buena obra <input type="number" id="setDeedPts" min="1" style="width:80px"></label>
+        <label>Recordatorio del bono <input type="time" id="setBonusTime"></label>
+      </div>
+      <div class="row">
+        <button id="btnTest">Probar notificación</button>
+        <button id="btnExport">Exportar respaldo</button>
+        <button id="btnImport">Importar respaldo</button>
+        <input type="file" id="fileImport" accept="application/json" class="hidden">
+      </div>
+      <p class="sub" style="margin:10px 0 0" id="notaDatos">Los datos se guardan en este navegador. Deja la pestaña abierta (aunque esté minimizada) para recibir las notificaciones.</p>
+    </div>
+  </section>
+  <footer id="foot"></footer>
+</main>
+
+<script>
+const KEY = 'pendientes-app-v1';
+const $ = s => document.querySelector(s);
+const uid = () => Math.random().toString(36).slice(2, 10);
+const pad = n => String(n).padStart(2, '0');
+const dayKey = (d = new Date()) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const nowHM = () => { const d = new Date(); return `${pad(d.getHours())}:${pad(d.getMinutes())}`; };
+const daysBack = n => { const out = []; for (let i = n - 1; i >= 0; i--) { const d = new Date(); d.setDate(d.getDate() - i); out.push(d); } return out; };
+const DIAS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+const esc = s => s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+function defaults() {
+  return {
+    tasks: [],
+    habits: ['Tender la cama', 'Bañarme', 'Comer', 'Ir al gimnasio'].map(name => ({ id: uid(), name })),
+    log: {},
+    deeds: {},
+    settings: { habitPts: 10, bonusPts: 25, deedPts: 50, bonusTime: '21:00', bonusNotified: null, deedNotified: null }
+  };
+}
+const CATS = { trabajo: '💼 Trabajo', escuela: '📚 Escuela', vida: '🏠 Vida' };
+const DEEDS = [
+  ['🐶', 'Dale de comer a un perrito de la calle'],
+  ['🐱', 'Deja agua limpia afuera para los animalitos de la calle'],
+  ['🤝', 'Ayuda a alguien a cargar sus cosas o bolsas'],
+  ['👵', 'Llama o visita a un familiar mayor solo para saludar'],
+  ['🥪', 'Invítale algo de comer a alguien que lo necesite'],
+  ['💬', 'Escríbele a un amigo para decirle por qué lo aprecias'],
+  ['🌱', 'Recoge basura de la calle o de un parque'],
+  ['👕', 'Dona ropa que ya no uses'],
+  ['📦', 'Regala un juguete u objeto que ya no uses a alguien que lo aproveche'],
+  ['🙏', 'Agradece en persona a alguien que te atiende (cajero, chofer, intendente)'],
+  ['🏠', 'Haz una tarea de la casa que normalmente le toca a otra persona'],
+  ['📚', 'Ayuda a alguien a estudiar o explícale algo que sepas'],
+  ['🚪', 'Ábrele la puerta o cede tu lugar a alguien'],
+  ['⭐', 'Deja una buena reseña a un negocio local que te guste'],
+  ['🩸', 'Infórmate o regístrate para donar sangre'],
+  ['🤫', 'No te quejes de nada durante un día completo'],
+  ['🚫', 'No critiques ni hables mal de nadie durante un día'],
+  ['📵', 'No uses el celular en las comidas para convivir con quien estés'],
+  ['😠', 'No discutas ni levantes la voz en todo un día'],
+  ['🗑️', 'No uses plásticos de un solo uso durante un día'],
+  ['😊', 'Dile un cumplido sincero a tres personas distintas'],
+  ['🌻', 'Riega o cuida una planta o un árbol de tu calle']
+];
+function load() {
+  try { const s = JSON.parse(localStorage.getItem(KEY)); if (s && s.tasks) return migrate(s); } catch (e) {}
+  return defaults();
+}
+function migrate(s) {
+  const d = defaults();
+  const out = Object.assign(d, s);
+  out.settings = Object.assign(defaults().settings, s.settings);
+  out.tasks.forEach(t => { if (!CATS[t.cat]) t.cat = 'vida'; });
+  return out;
+}
+let state = load();
+function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} reprogramar(); }
+function dayLog(k) { return state.log[k] || (state.log[k] = { habits: {}, noSpend: false }); }
+
+function pointsFor(k) {
+  const deed = Object.values(state.deeds).some(d => d.done && d.doneDate === k) ? state.settings.deedPts : 0;
+  const l = state.log[k]; if (!l) return { habits: 0, bonus: 0, deed, total: deed };
+  const done = state.habits.filter(h => l.habits[h.id]).length;
+  const p = { habits: done * state.settings.habitPts, bonus: l.noSpend ? state.settings.bonusPts : 0, deed };
+  p.total = p.habits + p.bonus + p.deed;
+  return p;
+}
+
+/* ---------- Buena obra de la semana ---------- */
+function weekKey(d = new Date()) {
+  const m = new Date(d); m.setDate(m.getDate() - ((m.getDay() + 6) % 7)); // lunes
+  return dayKey(m);
+}
+function pickDeed(exclude = []) {
+  const recent = Object.values(state.deeds).slice(-6).map(d => d.idx).concat(exclude);
+  const pool = DEEDS.map((_, i) => i).filter(i => !recent.includes(i));
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+function currentDeed() {
+  const wk = weekKey();
+  if (!state.deeds[wk]) { state.deeds[wk] = { idx: pickDeed(), done: false, doneDate: null, rerolled: false }; save(); }
+  return state.deeds[wk];
+}
+function renderDeed() {
+  const d = currentDeed(), [emoji, text] = DEEDS[d.idx];
+  const total = Object.values(state.deeds).filter(x => x.done).length;
+  $('#deedCard').classList.toggle('done', d.done);
+  $('#deedCard').innerHTML = `
+    <div class="row" style="flex:1;min-width:220px;flex-wrap:nowrap">
+      <span class="emoji">${emoji}</span>
+      <div><div class="sub">Buena obra de esta semana · +${state.settings.deedPts} pts</div>
+      <div class="what">${esc(text)}</div>
+      <div class="sub">${total ? `Llevas ${total} buena${total > 1 ? 's' : ''} obra${total > 1 ? 's' : ''} 💛` : 'Cada lunes te toca una nueva al azar.'}</div></div>
+    </div>
+    <div class="row">
+      ${!d.done && !d.rerolled ? '<button id="deedReroll" title="Puedes cambiarla una vez por semana">🎲 Otra</button>' : ''}
+      <button id="deedDone" class="${d.done ? '' : 'primary'}">${d.done ? '↩ Deshacer' : '✓ ¡La hice!'}</button>
+    </div>`;
+}
+$('#deedCard').addEventListener('click', e => {
+  const d = currentDeed();
+  if (e.target.id === 'deedDone') { d.done = !d.done; d.doneDate = d.done ? dayKey() : null; }
+  else if (e.target.id === 'deedReroll') { d.idx = pickDeed([d.idx]); d.rerolled = true; }
+  else return;
+  save(); renderAll();
+});
+
+/* ---------- Pendientes ---------- */
+let catFilter = 'todas';
+function renderFilters() {
+  const pend = state.tasks.filter(t => !t.done);
+  const opts = [['todas', 'Todas']].concat(Object.entries(CATS));
+  $('#filters').innerHTML = opts.map(([k, l]) => {
+    const n = k === 'todas' ? pend.length : pend.filter(t => t.cat === k).length;
+    return `<button data-cat="${k}" class="${catFilter === k ? 'active' : ''}">${l} · ${n}</button>`;
+  }).join('');
+}
+$('#filters').addEventListener('click', e => {
+  const b = e.target.closest('[data-cat]'); if (!b) return;
+  catFilter = b.dataset.cat;
+  if (catFilter !== 'todas') $('#taskCat').value = catFilter;
+  renderTasks();
+});
+function renderTasks() {
+  renderFilters();
+  const today = dayKey(), hm = nowHM();
+  const inCat = t => catFilter === 'todas' || t.cat === catFilter;
+  const pend = state.tasks.filter(t => !t.done && inCat(t)).sort((a, b) => a.time.localeCompare(b.time));
+  const done = state.tasks.filter(t => t.done && inCat(t)).sort((a, b) => (b.doneDate || '').localeCompare(a.doneDate || ''));
+  const catChip = t => `<span class="chip cat-${t.cat}">${CATS[t.cat]}</span>`;
+  $('#countPend').textContent = `(${pend.length})`;
+  $('#countDone').textContent = `(${done.length})`;
+  const daysOld = t => Math.round((new Date(today) - new Date(t.created)) / 864e5);
+  $('#listPend').innerHTML = pend.length ? pend.map(t => {
+    const late = t.time <= hm;
+    const age = daysOld(t);
+    return `<li data-id="${t.id}">
+      <input type="checkbox" data-act="toggle" title="Tachar">
+      <span class="txt">${esc(t.text)}${age > 0 ? ` <span class="sub">· hace ${age} día${age > 1 ? 's' : ''}</span>` : ''}</span>
+      ${catChip(t)}
+      <span class="chip ${late ? 'late' : ''}">🔔 ${t.time}</span>
+      <button class="icon" data-act="time" title="Cambiar hora">⏰</button>
+      <button class="icon" data-act="del" title="Borrar">✕</button></li>`;
+  }).join('') : '<li class="empty">Nada pendiente. ¡Bien!</li>';
+  $('#listDone').innerHTML = done.length ? done.map(t => `<li class="done" data-id="${t.id}">
+      <input type="checkbox" checked data-act="toggle" title="Destachar">
+      <span class="txt">${esc(t.text)}</span>
+      ${catChip(t)}
+      <span class="chip ok">${t.doneDate || ''}</span>
+      <button class="icon" data-act="del" title="Borrar">✕</button></li>`).join('') : '<li class="empty">Aún no tachas nada.</li>';
+}
+$('#formTask').addEventListener('submit', e => {
+  e.preventDefault();
+  const text = $('#taskText').value.trim(); if (!text) return;
+  state.tasks.push({ id: uid(), text, cat: $('#taskCat').value, time: $('#taskTime').value || '09:00', created: dayKey(), done: false, doneDate: null, lastNotified: null });
+  $('#taskText').value = '';
+  save(); renderAll();
+});
+function onTaskClick(e) {
+  const btn = e.target.closest('[data-act]'); if (!btn) return;
+  const li = btn.closest('li'); const t = state.tasks.find(x => x.id === li.dataset.id); if (!t) return;
+  const act = btn.dataset.act;
+  if (act === 'toggle') { t.done = !t.done; t.doneDate = t.done ? dayKey() : null; }
+  if (act === 'del' && confirm(`¿Borrar "${t.text}"?`)) state.tasks = state.tasks.filter(x => x !== t);
+  if (act === 'time') {
+    const v = prompt('Nueva hora del recordatorio (HH:MM):', t.time);
+    if (v && /^\d{1,2}:\d{2}$/.test(v.trim())) { const [h, m] = v.trim().split(':'); t.time = `${pad(+h)}:${m}`; t.lastNotified = null; }
+  }
+  save(); renderAll();
+}
+$('#listPend').addEventListener('click', onTaskClick);
+$('#listDone').addEventListener('click', onTaskClick);
+$('#btnClearDone').addEventListener('click', () => {
+  if (confirm('¿Borrar todos los pendientes tachados? (El gráfico de avance perderá ese historial)')) {
+    state.tasks = state.tasks.filter(t => !t.done); save(); renderAll();
+  }
+});
+
+/* ---------- Hábitos ---------- */
+function renderHabits() {
+  const days = daysBack(7), today = dayKey();
+  let html = '<thead><tr><th>Actividad</th>' + days.map(d => `<th class="${dayKey(d) === today ? 'today' : ''}">${DIAS[d.getDay()]}<br>${d.getDate()}</th>`).join('') + '</tr></thead><tbody>';
+  html += state.habits.map(h => '<tr>' +
+    `<td><span class="hname">${esc(h.name)} <button class="icon" data-delhabit="${h.id}" title="Quitar actividad">✕</button></span></td>` +
+    days.map(d => { const k = dayKey(d); const on = state.log[k]?.habits[h.id];
+      return `<td class="${k === today ? 'today' : ''}"><input type="checkbox" data-day="${k}" data-habit="${h.id}" ${on ? 'checked' : ''}></td>`; }).join('') +
+    '</tr>').join('');
+  html += '<tr class="bonus"><td>💰 Sin gastos innecesarios</td>' + days.map(d => { const k = dayKey(d);
+    return `<td class="${k === today ? 'today' : ''}"><input type="checkbox" data-day="${k}" data-bonus="1" ${state.log[k]?.noSpend ? 'checked' : ''}></td>`; }).join('') + '</tr>';
+  html += '<tr class="total"><td>Puntos</td>' + days.map(d => { const k = dayKey(d); const p = pointsFor(k);
+    return `<td class="${k === today ? 'today' : ''}">${p.total}</td>`; }).join('') + '</tr></tbody>';
+  $('#habitTable').innerHTML = html;
+  $('#bonusToday').checked = !!state.log[today]?.noSpend;
+  $('#bonusPtsLbl').textContent = `+${state.settings.bonusPts}`;
+}
+$('#habitTable').addEventListener('change', e => {
+  const c = e.target; if (!c.dataset.day) return;
+  const l = dayLog(c.dataset.day);
+  if (c.dataset.bonus) l.noSpend = c.checked; else l.habits[c.dataset.habit] = c.checked;
+  save(); renderAll();
+});
+$('#habitTable').addEventListener('click', e => {
+  const b = e.target.closest('[data-delhabit]'); if (!b) return;
+  const h = state.habits.find(x => x.id === b.dataset.delhabit);
+  if (h && confirm(`¿Quitar "${h.name}" de tus actividades diarias?`)) { state.habits = state.habits.filter(x => x !== h); save(); renderAll(); }
+});
+$('#bonusToday').addEventListener('change', e => { dayLog(dayKey()).noSpend = e.target.checked; save(); renderAll(); });
+$('#formHabit').addEventListener('submit', e => {
+  e.preventDefault(); const name = $('#habitText').value.trim(); if (!name) return;
+  state.habits.push({ id: uid(), name }); $('#habitText').value = ''; save(); renderAll();
+});
+
+/* ---------- Avance ---------- */
+function barChart(svg, days, series) {
+  const W = 640, H = 200, L = 30, B = 26, T = 10, R = 6;
+  const totals = days.map((_, i) => series.reduce((s, x) => s + x.values[i], 0));
+  const max = Math.max(1, ...totals);
+  const step = Math.ceil(max / 4);
+  const top = step * 4;
+  const bw = (W - L - R) / days.length;
+  const y = v => T + (H - T - B) * (1 - v / top);
+  let g = '';
+  for (let v = 0; v <= top; v += step) g += `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)"/><text x="${L - 6}" y="${y(v) + 4}" text-anchor="end">${v}</text>`;
+  days.forEach((d, i) => {
+    let base = 0; const x = L + i * bw + bw * 0.18, w = bw * 0.64;
+    series.forEach(s => { const v = s.values[i]; if (v > 0) {
+      g += `<rect x="${x}" y="${y(base + v)}" width="${w}" height="${y(base) - y(base + v)}" rx="3" fill="${s.color}"><title>${v}</title></rect>`; base += v; } });
+    if (totals[i] > 0) g += `<text x="${x + w / 2}" y="${y(totals[i]) - 4}" text-anchor="middle" style="fill:var(--text)">${totals[i]}</text>`;
+    g += `<text x="${x + w / 2}" y="${H - 8}" text-anchor="middle">${d.getDate()}/${d.getMonth() + 1}</text>`;
+  });
+  svg.innerHTML = g;
+}
+function renderProgress() {
+  const total = state.tasks.length, done = state.tasks.filter(t => t.done).length;
+  const pct = total ? Math.round(done / total * 100) : 0;
+  const r = 48, c = 2 * Math.PI * r;
+  $('#donut').innerHTML = `<circle cx="60" cy="60" r="${r}" fill="none" stroke="var(--line)" stroke-width="14"/>
+    <circle cx="60" cy="60" r="${r}" fill="none" stroke="var(--ok)" stroke-width="14" stroke-linecap="round"
+      stroke-dasharray="${c * pct / 100} ${c}" transform="rotate(-90 60 60)"/>
+    <text x="60" y="66" text-anchor="middle" style="font-size:22px;font-weight:700;fill:var(--text)">${pct}%</text>`;
+  $('#donutInfo').innerHTML = `<p style="margin:0 0 8px"><b>${done}</b> tachados de <b>${total}</b> pendientes · <b>${total - done}</b> por hacer</p>
+    <div class="bar"><div style="width:${pct}%"></div></div>`;
+
+  const days = daysBack(14);
+  barChart($('#chartTasks'), days, [{ color: 'var(--accent)', values: days.map(d => state.tasks.filter(t => t.done && t.doneDate === dayKey(d)).length) }]);
+  barChart($('#chartPoints'), days, [
+    { color: 'var(--ok)', values: days.map(d => pointsFor(dayKey(d)).habits) },
+    { color: 'var(--warn)', values: days.map(d => pointsFor(dayKey(d)).bonus) },
+    { color: '#ec4899', values: days.map(d => pointsFor(dayKey(d)).deed) }
+  ]);
+
+  const week = daysBack(7).reduce((s, d) => s + pointsFor(dayKey(d)).total, 0);
+  const keys = new Set(Object.keys(state.log).concat(Object.values(state.deeds).filter(d => d.done).map(d => d.doneDate)));
+  const all = [...keys].reduce((s, k) => s + pointsFor(k).total, 0);
+  // racha: días seguidos (terminando hoy o ayer) con todas las actividades hechas
+  let streak = 0; const d = new Date();
+  const full = k => state.habits.length && state.habits.every(h => state.log[k]?.habits[h.id]);
+  if (!full(dayKey(d))) d.setDate(d.getDate() - 1);
+  while (full(dayKey(d))) { streak++; d.setDate(d.getDate() - 1); }
+  const noSpendDays = daysBack(30).filter(x => state.log[dayKey(x)]?.noSpend).length;
+  $('#stats').innerHTML = [
+    [pointsFor(dayKey()).total, 'Puntos hoy'],
+    [week, 'Puntos esta semana'], [all, 'Puntos totales'],
+    [`${streak} 🔥`, 'Racha de días completos'], [noSpendDays, 'Días sin gastos (30 días)'],
+    [Object.values(state.deeds).filter(d => d.done).length + ' 💛', 'Buenas obras hechas']
+  ].map(([n, l]) => `<div class="stat"><div class="n">${n}</div><div class="l">${l}</div></div>`).join('');
+
+  $('#setHabitPts').value = state.settings.habitPts;
+  $('#setBonusPts').value = state.settings.bonusPts;
+  $('#setBonusTime').value = state.settings.bonusTime;
+  $('#setDeedPts').value = state.settings.deedPts;
+}
+$('#setDeedPts').addEventListener('change', e => { state.settings.deedPts = Math.max(1, +e.target.value || 50); save(); renderAll(); });
+$('#setHabitPts').addEventListener('change', e => { state.settings.habitPts = Math.max(1, +e.target.value || 10); save(); renderAll(); });
+$('#setBonusPts').addEventListener('change', e => { state.settings.bonusPts = Math.max(1, +e.target.value || 25); save(); renderAll(); });
+$('#setBonusTime').addEventListener('change', e => { state.settings.bonusTime = e.target.value || '21:00'; state.settings.bonusNotified = null; save(); });
+
+$('#btnExport').addEventListener('click', async () => {
+  if (NATIVO) { // en la app de Android no hay descargas: se copia al portapapeles
+    try { await navigator.clipboard.writeText(JSON.stringify(state)); alert('Respaldo copiado. Pégalo en una nota o mándatelo por WhatsApp para guardarlo.'); }
+    catch (e) { alert('No se pudo copiar el respaldo.'); }
+    return;
+  }
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' }));
+  a.download = `pendientes-respaldo-${dayKey()}.json`; a.click();
+});
+$('#btnImport').addEventListener('click', () => {
+  if (NATIVO) {
+    const txt = prompt('Pega aquí el texto del respaldo:'); if (!txt) return;
+    try { const s = JSON.parse(txt); if (!s.tasks) throw 0;
+      if (confirm('Esto reemplaza tus datos actuales. ¿Continuar?')) { state = migrate(s); save(); renderAll(); }
+    } catch (err) { alert('Ese texto no es un respaldo válido.'); }
+    return;
+  }
+  $('#fileImport').click();
+});
+$('#fileImport').addEventListener('change', async e => {
+  const f = e.target.files[0]; if (!f) return;
+  try { const s = JSON.parse(await f.text()); if (!s.tasks) throw 0;
+    if (confirm('Esto reemplaza tus datos actuales. ¿Continuar?')) { state = migrate(s); save(); renderAll(); }
+  } catch (err) { alert('Ese archivo no es un respaldo válido.'); }
+  e.target.value = '';
+});
+
+/* ---------- App nativa (Android): las notificaciones se programan en el celular ---------- */
+const NATIVO = !!(window.Capacitor && Capacitor.isNativePlatform && Capacitor.isNativePlatform());
+const LN = NATIVO ? Capacitor.Plugins.LocalNotifications : null;
+const fechaHora = (d, hm) => { const [h, m] = hm.split(':').map(Number); const x = new Date(d); x.setHours(h, m, 0, 0); return x; };
+let timerProg = null;
+function reprogramar() { if (!LN) return; clearTimeout(timerProg); timerProg = setTimeout(programarNativo, 800); }
+// Android no deja repetir "solo si no está tachado", así que se programan avisos sueltos para los
+// próximos días y se rehacen cada vez que cambia algo o se abre la app.
+async function programarNativo() {
+  try {
+    if ((await LN.checkPermissions()).display !== 'granted') return;
+    const pend = await LN.getPending();
+    if (pend.notifications.length) await LN.cancel({ notifications: pend.notifications.map(n => ({ id: n.id })) });
+    const tareas = state.tasks.filter(t => !t.done);
+    const dias = Math.max(3, Math.min(30, Math.floor(400 / (tareas.length + 2)))); // Android limita ~500 alarmas
+    const ahora = new Date(), hoy = dayKey(), s = state.settings, deed = currentDeed();
+    const lista = []; let id = 1;
+    const add = (fecha, title, body) => { if (fecha > ahora) lista.push({ id: id++, title, body, channelId: 'recordatorios', schedule: { at: fecha, allowWhileIdle: true } }); };
+    for (let i = 0; i < dias; i++) {
+      const d = new Date(); d.setDate(d.getDate() + i);
+      tareas.forEach(t => add(fechaHora(d, t.time), 'Pendiente: ' + t.text, `${CATS[t.cat]} · Táchalo cuando lo termines.`));
+      if (!(dayKey(d) === hoy && state.log[hoy]?.noSpend))
+        add(fechaHora(d, s.bonusTime), '¿Hoy no gastaste en cosas innecesarias?', `Márcalo en Hábitos diarios y gana +${s.bonusPts} puntos extra.`);
+      if (d.getDay() === 1) {
+        const estaSemana = weekKey(d) === weekKey();
+        if (!estaSemana || !deed.done) add(fechaHora(d, '09:00'), '💛 Buena obra de la semana', estaSemana ? DEEDS[deed.idx][1] : 'Ya tienes una nueva buena obra. ¡Ábrela para verla!');
+      }
+    }
+    if (lista.length) await LN.schedule({ notifications: lista });
+  } catch (e) { console.error('No se pudieron programar las notificaciones', e); }
+}
+async function permisosNativos() {
+  const p = await LN.checkPermissions();
+  const exacta = LN.checkExactNotificationSetting ? (await LN.checkExactNotificationSetting()).exact_alarm : 'granted';
+  return { notif: p.display, exacta };
+}
+async function bannerNativo() {
+  const p = await permisosNativos();
+  const ok = p.notif === 'granted' && p.exacta === 'granted';
+  $('#notifBanner').classList.toggle('hidden', ok);
+  if (p.notif !== 'granted') { $('#notifBanner span').textContent = 'Activa las notificaciones para que te recuerde tus pendientes.'; $('#btnNotif').textContent = 'Activar notificaciones'; }
+  else if (p.exacta !== 'granted') { $('#notifBanner span').textContent = 'Para que los avisos lleguen a la hora exacta, permite "Alarmas y recordatorios".'; $('#btnNotif').textContent = 'Permitir'; }
+}
+async function pedirPermisosNativos() {
+  const p = await permisosNativos();
+  if (p.notif !== 'granted') await LN.requestPermissions();
+  else if (p.exacta !== 'granted' && LN.changeExactNotificationSetting) await LN.changeExactNotificationSetting();
+  await bannerNativo(); reprogramar();
+}
+if (NATIVO) {
+  LN.createChannel({ id: 'recordatorios', name: 'Recordatorios', description: 'Pendientes, hábitos y buena obra', importance: 5, visibility: 1, vibration: true }).catch(() => {});
+  $('#notaDatos').textContent = 'Los datos se guardan en este celular. Los avisos llegan aunque la app esté cerrada.';
+}
+
+/* ---------- Notificaciones (versión web) ---------- */
+// En celulares (Android) solo funcionan las notificaciones mostradas por el service worker.
+async function notify(title, body, tag) {
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  const opts = { body, tag, requireInteraction: true, icon: 'icon-192.png', badge: 'icon-192.png' };
+  try {
+    const reg = 'serviceWorker' in navigator && await navigator.serviceWorker.getRegistration();
+    if (reg) return reg.showNotification(title, opts);
+  } catch (e) {}
+  const n = new Notification(title, opts);
+  n.onclick = () => { window.focus(); n.close(); };
+}
+function checkReminders() {
+  if (NATIVO) return; // en Android ya están programadas en el sistema
+  const today = dayKey(), hm = nowHM();
+  let changed = false;
+  state.tasks.forEach(t => {
+    if (!t.done && t.time <= hm && t.lastNotified !== today) {
+      notify('Pendiente: ' + t.text, `Recordatorio de las ${t.time}. Táchalo cuando lo termines.`, 'task-' + t.id);
+      t.lastNotified = today; changed = true;
+    }
+  });
+  const s = state.settings;
+  if (hm >= s.bonusTime && s.bonusNotified !== today) {
+    if (!state.log[today]?.noSpend) notify('¿Hoy no gastaste en cosas innecesarias?', `Márcalo en Hábitos diarios y gana +${s.bonusPts} puntos extra.`, 'bonus');
+    s.bonusNotified = today; changed = true;
+  }
+  const wk = weekKey(), deed = currentDeed();
+  if (s.deedNotified !== wk && hm >= '09:00') {
+    if (!deed.done) notify('💛 Buena obra de la semana', DEEDS[deed.idx][1], 'deed');
+    s.deedNotified = wk; changed = true;
+  }
+  if (changed) save();
+}
+function renderNotifBanner() {
+  if (NATIVO) return bannerNativo();
+  const ok = 'Notification' in window && Notification.permission === 'granted';
+  $('#notifBanner').classList.toggle('hidden', ok);
+  if (!('Notification' in window)) $('#notifBanner span').textContent = 'Este navegador no soporta notificaciones.';
+  else if (Notification.permission === 'denied') $('#notifBanner span').textContent = 'Bloqueaste las notificaciones. Actívalas desde el candado de la barra de direcciones.';
+}
+$('#btnNotif').addEventListener('click', async () => {
+  if (NATIVO) return pedirPermisosNativos();
+  await Notification.requestPermission(); renderNotifBanner(); checkReminders();
+});
+$('#btnTest').addEventListener('click', async () => {
+  if (NATIVO) {
+    if ((await permisosNativos()).notif !== 'granted') await LN.requestPermissions();
+    await LN.schedule({ notifications: [{ id: 99999, title: '¡Funciona! 🎉', body: 'Así te llegarán los recordatorios.', channelId: 'recordatorios', schedule: { at: new Date(Date.now() + 5000), allowWhileIdle: true } }] });
+    alert('Cierra la app: en 5 segundos te llega la notificación de prueba.');
+    return;
+  }
+  if (Notification.permission !== 'granted') await Notification.requestPermission();
+  renderNotifBanner(); notify('¡Funciona! 🎉', 'Así te llegarán los recordatorios.', 'test');
+});
+
+/* ---------- General ---------- */
+document.querySelectorAll('nav .tab').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('nav .tab').forEach(x => x.classList.toggle('active', x === b));
+  ['pendientes', 'habitos', 'avance'].forEach(t => $('#tab-' + t).classList.toggle('hidden', t !== b.dataset.tab));
+  try { localStorage.setItem(KEY + '-tab', b.dataset.tab); } catch (e) {}
+}));
+let lastDay = dayKey();
+function renderAll() {
+  const d = new Date();
+  $('#hoy').textContent = d.toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  $('#puntosHoyChip').textContent = `${pointsFor(dayKey()).total} pts hoy`;
+  renderDeed(); renderTasks(); renderHabits(); renderProgress(); renderNotifBanner();
+}
+if (!NATIVO && 'serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(() => {});
+// En el celular la app se pausa en segundo plano: al volver revisa y recorre la ventana de avisos.
+document.addEventListener('visibilitychange', () => { if (!document.hidden) { checkReminders(); renderAll(); reprogramar(); } });
+reprogramar();
+try { const t = localStorage.getItem(KEY + '-tab'); if (t) document.querySelector(`nav .tab[data-tab="${t}"]`)?.click(); } catch (e) {}
+renderAll();
+checkReminders();
+setInterval(() => {
+  checkReminders();
+  if (dayKey() !== lastDay) { lastDay = dayKey(); renderAll(); } else renderTasks();
+}, 20000);
+</script>
+</body>
+</html>

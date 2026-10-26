@@ -1,0 +1,11 @@
+{
+  "appId": "com.itriuh.pendientes",
+  "appName": "Pendientes",
+  "webDir": "www",
+  "plugins": {
+    "LocalNotifications": {
+      "smallIcon": "ic_stat_notify",
+      "iconColor": "#3b6ef5"
+    }
+  }
+}

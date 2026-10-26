@@ -1,0 +1,58 @@
+# Compila el .apk de Android en GitHub cada vez que se suben cambios
+# y lo publica en "Releases" para descargarlo desde el celular.
+name: Compilar app Android
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+
+      - name: Instalar dependencias y copiar la app web
+        run: |
+          npm ci
+          npx cap sync android
+
+      - name: Preparar llave de firma
+        env:
+          KEYSTORE_B64: ${{ secrets.KEYSTORE_B64 }}
+        run: echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/pendientes.p12"
+
+      - name: Compilar APK
+        working-directory: android
+        env:
+          KEYSTORE_PATH: ${{ runner.temp }}/pendientes.p12
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          VERSION_CODE: ${{ github.run_number }}
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon
+          cp app/build/outputs/apk/release/app-release.apk "$GITHUB_WORKSPACE/Pendientes.apk"
+
+      - name: Publicar en Releases
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.${{ github.run_number }}
+          name: Pendientes v1.0.${{ github.run_number }}
+          body: Descarga **Pendientes.apk** desde el celular e instálalo.
+          files: Pendientes.apk
+          make_latest: true
