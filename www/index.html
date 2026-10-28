@@ -55,7 +55,11 @@
   ul.tasks li { display: flex; align-items: center; gap: 10px; padding: 10px 4px;
     border-bottom: 1px solid var(--line); }
   ul.tasks li:last-child { border-bottom: 0; }
-  ul.tasks .txt { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+  ul.tasks .body { flex: 1; min-width: 0; }
+  ul.tasks .txt { overflow-wrap: break-word; font-size: 16px; }
+  ul.tasks .meta { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin-top: 4px; }
+  ul.tasks .acts { display: flex; gap: 4px; flex: none; }
+  ul.tasks input[type=checkbox] { flex: none; }
   ul.tasks li.done .txt { text-decoration: line-through; color: var(--muted); }
   .chip { font-size: 12px; padding: 2px 8px; border-radius: 99px; background: var(--accent-soft);
     color: var(--accent); white-space: nowrap; }
@@ -371,18 +375,22 @@ function renderTasks() {
     const age = daysOld(t);
     return `<li data-id="${t.id}">
       <input type="checkbox" data-act="toggle" title="Tachar">
-      <span class="txt">${esc(t.text)}${age > 0 ? ` <span class="sub">· hace ${age} día${age > 1 ? 's' : ''}</span>` : ''}</span>
-      ${catChip(t)}
-      <span class="chip ${late ? 'late' : ''}">🔔 ${t.time}</span>
-      <button class="icon" data-act="time" title="Cambiar hora">⏰</button>
-      <button class="icon" data-act="del" title="Borrar">✕</button></li>`;
+      <div class="body">
+        <div class="txt">${esc(t.text)}</div>
+        <div class="meta">${catChip(t)}<span class="chip ${late ? 'late' : ''}">🔔 ${t.time}</span>${age > 0 ? `<span class="sub">hace ${age} día${age > 1 ? 's' : ''}</span>` : ''}</div>
+      </div>
+      <div class="acts">
+        <button class="icon" data-act="time" title="Cambiar hora">⏰</button>
+        <button class="icon" data-act="del" title="Borrar">✕</button>
+      </div></li>`;
   }).join('') : '<li class="empty">Nada pendiente. ¡Bien!</li>';
   $('#listDone').innerHTML = done.length ? done.map(t => `<li class="done" data-id="${t.id}">
       <input type="checkbox" checked data-act="toggle" title="Destachar">
-      <span class="txt">${esc(t.text)}</span>
-      ${catChip(t)}
-      <span class="chip ok">${t.doneDate || ''}</span>
-      <button class="icon" data-act="del" title="Borrar">✕</button></li>`).join('') : '<li class="empty">Aún no tachas nada.</li>';
+      <div class="body">
+        <div class="txt">${esc(t.text)}</div>
+        <div class="meta">${catChip(t)}<span class="chip ok">✓ ${t.doneDate || ''}</span></div>
+      </div>
+      <div class="acts"><button class="icon" data-act="del" title="Borrar">✕</button></div></li>`).join('') : '<li class="empty">Aún no tachas nada.</li>';
 }
 $('#formTask').addEventListener('submit', e => {
   e.preventDefault();
