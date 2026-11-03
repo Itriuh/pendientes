@@ -1,2 +1,3 @@
 android/gradlew text eol=lf
 *.sh text eol=lf
+gimnasio/android/gradlew text eol=lf

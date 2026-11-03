@@ -1,7 +1,6 @@
 // Service worker: permite instalar la app, usarla sin internet y mostrar notificaciones en el celular.
-const CACHE = 'pendientes-v3';
-const ARCHIVOS = ['./', 'index.html', 'manifest.json', 'icon-192.png', 'icon-512.png',
-  'gimnasio/', 'gimnasio/index.html', 'gimnasio/manifest.json', 'gimnasio/icon-192.png', 'gimnasio/icon-512.png'];
+const CACHE = 'pendientes-v2';
+const ARCHIVOS = ['./', 'index.html', 'manifest.json', 'icon-192.png', 'icon-512.png'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ARCHIVOS)));

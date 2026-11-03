@@ -1,4 +1,4 @@
-# Compila el .apk de Android en GitHub cada vez que se suben cambios
+# Compila los .apk de Android (Pendientes y Gimnasio) en GitHub cada vez que se suben cambios
 # y lo publica en "Releases" para descargarlo desde el celular.
 name: Compilar app Android
 
@@ -20,6 +20,9 @@ jobs:
         with:
           node-version: 22
           cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            gimnasio/package-lock.json
 
       - uses: actions/setup-java@v5
         with:
@@ -37,7 +40,7 @@ jobs:
           KEYSTORE_B64: ${{ secrets.KEYSTORE_B64 }}
         run: printf '%s' "$KEYSTORE_B64" | tr -d '\r\n ' | base64 -d > "$RUNNER_TEMP/pendientes.p12"
 
-      - name: Compilar APK
+      - name: Compilar APK de Pendientes
         working-directory: android
         env:
           KEYSTORE_PATH: ${{ runner.temp }}/pendientes.p12
@@ -48,11 +51,33 @@ jobs:
           ./gradlew assembleRelease --no-daemon
           cp app/build/outputs/apk/release/app-release.apk "$GITHUB_WORKSPACE/Pendientes.apk"
 
+      - name: Preparar app del gimnasio
+        working-directory: gimnasio
+        run: |
+          npm ci
+          npx cap sync android
+
+      - name: Compilar APK de Gimnasio
+        working-directory: gimnasio/android
+        env:
+          KEYSTORE_PATH: ${{ runner.temp }}/pendientes.p12
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          VERSION_CODE: ${{ github.run_number }}
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon
+          cp app/build/outputs/apk/release/app-release.apk "$GITHUB_WORKSPACE/Gimnasio.apk"
+
       - name: Publicar en Releases
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v1.0.${{ github.run_number }}
           name: Pendientes v1.0.${{ github.run_number }}
-          body: Descarga **Pendientes.apk** desde el celular e instálalo.
-          files: Pendientes.apk
+          body: |
+            Descarga desde el celular el .apk que quieras e instálalo:
+            - **Pendientes.apk**: pendientes, hábitos y buenas obras.
+            - **Gimnasio.apk**: rutinas, series y gráficas de progreso del gimnasio.
+          files: |
+            Pendientes.apk
+            Gimnasio.apk
           make_latest: true

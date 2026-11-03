@@ -1,0 +1,16 @@
+{
+  "name": "mi-gimnasio",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Rutinas, series, pesos y repeticiones con gráficas de progreso.",
+  "scripts": {
+    "sync": "cap sync android"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.5.3",
+    "@capacitor/core": "^8.5.3"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.5.3"
+  }
+}

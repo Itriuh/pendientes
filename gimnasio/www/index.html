@@ -115,7 +115,6 @@
     <h1>🏋️ Mi Gimnasio</h1>
     <div class="sub" id="hoy"></div>
   </div>
-  <a class="btn" href="../index.html" id="linkPend">← Pendientes</a>
 </header>
 
 <main>
@@ -689,7 +688,7 @@ function renderAll() {
   $('#hoy').textContent = new Date().toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
   renderStart(); renderActive(); renderRoutines(); renderProgress(); renderHistory(); renderDatalist();
 }
-if (!NATIVO && 'serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('../sw.js', { scope: '../' }).catch(() => {});
+if (!NATIVO && 'serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(() => {});
 renderAll();
 try { const t = state.active ? 'entrenar' : localStorage.getItem(KEY + '-tab'); if (t) goTab(t); } catch (e) {}
 </script>
